@@ -109,6 +109,71 @@ app.get("/", (req, res) => {
   res.send(`API us up`);
 });
 
+app.post("/materials/create", auth, async (req, res) => {
+  const params = req.params;
+  const body = req.body;
+
+  const values = `(NULL, '${body.nombre}', '${body.descripcion}', '${body.color}', '${body.cantidad}', '${body.costo}','${body.unidad}')`;
+  const dbquery =
+    "INSERT INTO `materiales` (`id`, `nombre`, `descripcion`, `color`, `cantidad`, `costo`,`unidad`) VALUES " +
+    values;
+
+  try {
+    const result = await db.query(dbquery);
+    res.status(201).send();
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+app.get("/materials", auth, async (req, res) => {
+  const dbquery = "SELECT * FROM `materiales`";
+  try {
+    const result = await db.query(dbquery);
+    if (Array.isArray(result) && result.length >= 0) {
+      res.send(result);
+    } else {
+      res.status(404).send({ error: "No se encuentraron materiales" });
+    }
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+app.get("/materials/:id", auth, async (req, res) => {
+  const params = req.params;
+  const dbquery = "SELECT * FROM `materiales` WHERE `id` = " + params.id;
+  try {
+    const result = await db.query(dbquery);
+
+    if (Array.isArray(result) && result.length > 0) {
+      res.send(result);
+    } else {
+      res.status(404).send({ error: "No se encuentra el material" });
+    }
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+app.put("/materials/:id", auth, async (req, res) => {
+  const params = req.params;
+  const body = req.body;
+  const dbquery = `UPDATE materiales SET
+                    nombre = '${body.nombre}',
+                    descripcion = '${body.descripcion}',
+                    color='${body.color}',
+                    cantidad='${body.cantidad}',
+                    costo = '${body.costo}',
+                    unidad = '${body.unidad}',
+                    disponible = '${body.disponible}'
+                  WHERE
+                    materiales.id = ${params.id}`;
+
+  const result = await db.query(dbquery);
+  res.send(result);
+});
+
 
 
 module.exports = app;
