@@ -280,7 +280,83 @@ app.put("/clothes/:id", async (req, res) => {
   }
 });
 
+app.post("/clothes/:id/materials/add", auth, async (req, res) => {
+  const params = req.params;
+  const body = req.body;
+  const prendasId = params.id;
+  const materialId = body.materialId;
+  const cantidad = body.cantidad;
 
+  console.log("body: ", body);
+  const dbquery = `INSERT INTO materiales_prendas (materiales_id, prendas_id, cantidad) VALUES ('${materialId}', '${prendasId}', ${cantidad})`;
+  try {
+    const resp = await db.query(dbquery);
 
+    res.send(resp);
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+app.put("/clothes/:id/materials/:materialId", auth, async (req, res) => {
+  console.log("START");
+  const params = req.params;
+  const body = req.body;
+  const prendasId = params.id;
+  const materialId = params.materialId;
+  const cantidad = body.cantidad;
+
+  const dbquery = `UPDATE materiales_prendas SET cantidad = '${cantidad}' WHERE materiales_prendas.materiales_id = ${materialId} AND materiales_prendas.prendas_id = ${prendasId}`;
+  try {
+    const resp = await db.query(dbquery);
+
+    res.send(resp);
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+app.put("/clothes/:id/materials/:materialId/delete", auth, async (req, res) => {
+  const params = req.params;
+  const prendasId = params.id;
+  const materialId = params.materialId;
+
+  const dbquery = `DELETE FROM materiales_prendas WHERE materiales_prendas.materiales_id =${materialId} AND materiales_prendas.prendas_id = ${prendasId}`;
+  try {
+    const resp = await db.query(dbquery);
+
+    res.send(resp);
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+app.post("/clothes/:id/image", upload.single('file'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { file } = req;
+    path = `img/clothesimg/`;
+    console.log("file: ", file);
+    const bits = file.originalname.split('.');
+    const ext = bits[bits.length - 1];
+
+    const fullPath = path + id + '.' + ext;
+    console.log(fullPath);
+    try {
+      fs.unlink(fullPath);
+    } catch (e) {
+      console.log("new file");
+    }
+
+    const stream = fs.createWriteStream(fullPath, { flags: 'w+' });
+    stream.once('open', function () {
+      stream.write(file.buffer);
+      stream.end();
+    });
+    res.send("ok");
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
 
 module.exports = app;
