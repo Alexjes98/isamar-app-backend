@@ -175,5 +175,112 @@ app.put("/materials/:id", auth, async (req, res) => {
 });
 
 
+const getClothe = async ({ id }) => {
+  let prenda;
+  let materiales = [];
+
+  let dbquery = `SELECT * FROM prendas WHERE id=${id}`;
+  let result = await db.query(dbquery);
+
+  if (Array.isArray(result) && result.length > 0) {
+    prenda = result[0];
+  }
+
+  dbquery = `SELECT
+                    materiales.id as materialId,
+                    materiales.nombre,
+                    materiales.color,
+                    materiales.costo,
+                    materiales.unidad,
+                    materiales_prendas.cantidad
+                    FROM
+                    prendas
+                    JOIN materiales_prendas ON prendas.id = materiales_prendas.prendas_id
+                    JOIN materiales ON materiales.id = materiales_prendas.materiales_id
+                    WHERE
+                    prendas.id ="${id}"`;
+  result = await db.query(dbquery);
+  if (Array.isArray(result)) {
+    materiales = result;
+  }
+  const resp = { prenda, materiales };
+  return resp;
+};
+
+app.get("/clothes/:id", auth, async (req, res) => {
+  const params = req.params;
+  const id = params.id;
+  const result = await getClothe({ id });
+  res.send(result);
+});
+
+app.get("/clothes/", auth, async (req, res) => {
+  let dbquery = `SELECT id FROM prendas`;
+  let result = await db.query(dbquery);
+
+  if (Array.isArray(result)) {
+    const resp = result.map((clothe) => {
+      return getClothe({ id: clothe.id });
+    });
+
+    const clothes = await Promise.all(resp);
+
+    res.send(clothes);
+  }
+});
+
+const createClothe = async ({ nombre, descripcion, talla, costo }) => {
+  const values = `(NULL, '${nombre}', '${descripcion}', '${talla}', '${costo}')`;
+  const dbquery =
+    "INSERT INTO `prendas` (`id`, `nombre`, `descripcion`, `talla`, `costo`) VALUES " +
+    values;
+  try {
+    const resp = await db.query(dbquery);
+
+    return { id: resp.insertId };
+  } catch (e) {
+    return null;
+  }
+};
+
+const updateClothe = async ({ id, nombre, descripcion, talla, costo, disponible }) => {
+  const dbquery = `UPDATE prendas SET nombre = '${nombre}', descripcion = '${descripcion}', talla = '${talla}', costo = '${costo}', disponible='${disponible}' WHERE prendas.id =${id}`;
+  try {
+    const resp = await db.query(dbquery);
+    console.log("epa: ", dbquery)
+    return { id: resp.insertId };
+  } catch (e) {
+    return null;
+  }
+};
+
+app.post("/clothes/create", auth, async (req, res) => {
+  const body = req.body;
+  const prenda = body.prenda;
+  console.log(prenda);
+  const r = await createClothe(prenda);
+  if (r) {
+    res.send(r);
+  } else {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+app.put("/clothes/:id", async (req, res) => {
+  const params = req.params;
+  const body = req.body;
+  const prendasId = params.id;
+  console.log(body);
+  const obj = { id: prendasId, ...body };
+  const r = await updateClothe(obj);
+  if (r) {
+    res.send(r);
+  } else {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+
+
 
 module.exports = app;
