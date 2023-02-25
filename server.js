@@ -359,4 +359,178 @@ app.post("/clothes/:id/image", upload.single('file'), async (req, res) => {
   }
 });
 
+
+const getOrder = async ({ id }) => {
+  let orden;
+
+  let dbquery = `SELECT
+  id,
+  client_dni AS dni,
+  client_nombre AS nombre,
+  client_apellido AS apellido,
+  client_telefono AS telefono,
+  precio,
+  fecha_creacion AS creacion,
+  status,
+  fecha_actualizacion AS actualizacion,
+  costo
+FROM
+  orden
+WHERE
+  id=${id}`;
+  let result = await db.query(dbquery);
+
+  if (Array.isArray(result) && result.length > 0) {
+    orden = result[0];
+
+    dbquery = `SELECT
+    prendas.id,
+    prendas.nombre,
+    prendas.talla,
+    prendas_ordenes.cantidad,
+    prendas.costo
+  FROM
+    prendas_ordenes
+    JOIN prendas ON prendas_ordenes.prenda_id = prendas.id
+    WHERE
+  prendas_ordenes.orden_id =${id}`;
+    result = await db.query(dbquery);
+    if (Array.isArray(result)) {
+      prendas = result;
+    }
+    const resp = { orden, prendas };
+    return resp;
+  } else {
+    return null;
+  }
+
+
+};
+
+app.get("/orders/:id", auth, async (req, res) => {
+  const id = req.params.id;
+  console.log(id);
+  const order = await getOrder({ id });
+
+  if (order) {
+    res.send(order);
+  } else {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+app.get("/orders", auth, async (req, res) => {
+  let dbquery = `SELECT id FROM orden`;
+  let result = await db.query(dbquery);
+
+  if (Array.isArray(result)) {
+    const resp = result.map((clothe) => {
+      return getOrder({ id: clothe.id });
+    });
+
+    const orders = await Promise.all(resp);
+
+    res.send(orders);
+
+  }
+});
+
+app.post("/orders/create", auth, async (req, res) => {
+  const {
+    dni,
+    nombre,
+    apellido,
+    telefono,
+    precio,
+    status,
+    costo
+  } = req.body;
+  let dbquery = "INSERT INTO `orden` (`client_dni`, `client_nombre`, `client_apellido`, `client_telefono`, `precio`, `fecha_creacion`, `status`, `fecha_actualizacion`, `costo`, `id`) VALUES ";
+  const values = ` ('${dni}', '${nombre}', '${apellido}', '${telefono}', '${precio}', current_timestamp(), '${status}', current_timestamp(), '${costo}', NULL)`;
+  dbquery += values;
+  try {
+    const result = await db.query(dbquery);
+    const id = result.insertId;
+    res.send({ id });
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+
+});
+
+app.put("/orders/:id", auth, async (req, res) => {
+  const {
+    dni,
+    nombre,
+    apellido,
+    telefono,
+    precio,
+    status,
+    costo
+  } = req.body;
+  const id = req.params.id;
+
+  const dbquery = `UPDATE orden SET client_dni = '${dni}', client_nombre = '${nombre}', client_apellido = '${apellido}', client_telefono = '${telefono}', precio = '${precio}', status = '${status}', costo = '${costo}',fecha_actualizacion = current_timestamp() WHERE orden.id = ${id}`;
+  try {
+    const result = await db.query(dbquery);
+    res.send(result);
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+
+app.post("/orders/:id/clothes/add", auth, async (req, res) => {
+  const orderId = req.params.id;
+  const { id, cantidad } = req.body;
+
+
+  const dbquery = `INSERT INTO prendas_ordenes (prenda_id, orden_id, cantidad) VALUES ('${id}', '${orderId}', ${cantidad})`;
+  try {
+    const resp = await db.query(dbquery);
+
+    res.send(resp);
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
+app.put("/orders/:orderid/clothes/:clotheid", auth, async (req, res) => {
+  const { orderid, clotheid } = req.params;
+  const { cantidad } = req.body;
+
+
+  const dbquery = `UPDATE prendas_ordenes SET cantidad=${cantidad} WHERE prenda_id=${clotheid} AND orden_id=${orderid}`;
+  try {
+    const resp = await db.query(dbquery);
+
+    res.send(resp);
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+app.post("/orders/:orderid/delete", auth, async (req, res) => {
+  const { orderid, clotheid } = req.params;
+  let dbquery = `DELETE FROM prendas_ordenes WHERE orden_id=${orderid}`;
+  try {
+    const resp = await db.query(dbquery);
+    dbquery = `DELETE FROM orden WHERE id=${orderid}`;
+    await db.query(dbquery);
+    res.send(resp);
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+app.post("/orders/:orderid/clothes/:clotheid/delete", auth, async (req, res) => {
+  const { orderid, clotheid } = req.params;
+  const dbquery = `DELETE FROM prendas_ordenes WHERE prenda_id=${clotheid} AND orden_id=${orderid}`;
+  try {
+    const resp = await db.query(dbquery);
+
+    res.send(resp);
+  } catch (e) {
+    res.status(500).send({ error: "Internal Error" });
+  }
+});
+
 module.exports = app;
