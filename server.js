@@ -521,6 +521,7 @@ app.post("/orders/:orderid/delete", auth, async (req, res) => {
     res.status(500).send({ error: "Internal Error" });
   }
 });
+
 app.post("/orders/:orderid/clothes/:clotheid/delete", auth, async (req, res) => {
   const { orderid, clotheid } = req.params;
   const dbquery = `DELETE FROM prendas_ordenes WHERE prenda_id=${clotheid} AND orden_id=${orderid}`;
