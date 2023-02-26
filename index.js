@@ -9,11 +9,10 @@ const fs = require("fs");
 const app = express();
 const auth = require("./auth");
 
-
-
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000",
+  "https://isamar-app-backend-alexjes98.vercel.app/"],
   })
 );
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -26,7 +25,6 @@ const upload = multer({
 });
 
 app.use(express.static('./img'))
-
 
 app.post("/register", async (req, res) => {
   try {
@@ -102,7 +100,6 @@ app.post("/login", async (req, res) => {
   } catch (err) {
     console.log(err);
   }
-
 });
 
 app.get("/", (req, res) => {
