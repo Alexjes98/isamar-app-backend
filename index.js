@@ -59,6 +59,29 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.put("/users/:dni", auth, async (req, res) => {
+  const params = req.params;
+  const body = req.body;
+  encryptedPassword = await bcrypt.hash(body.password, 10);
+  const dbquery = `UPDATE users SET
+                    nombre = '${body.nombre}',
+                    apellido = '${body.apellido}',
+                    telefono='${body.telefono}',
+                    password='${encryptedPassword}',
+                    dni = '${body.dni}',
+                    rol = '${body.rol}',
+                  WHERE
+                    users.dni = ${params.dni}`;
+  const result = await db.query(dbquery);
+  res.send(result);
+});
+
+app.get("/users/", auth, async (req, res) => {
+  const dbquery = `SELECT * FROM users`;
+  const result = await db.query(dbquery);
+  res.send(result);
+});
+
 app.post("/login", async (req, res) => {
   try {
     const { dni, password } = req.body;
