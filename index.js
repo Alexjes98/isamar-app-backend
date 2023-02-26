@@ -11,8 +11,7 @@ const auth = require("./auth");
 
 app.use(
   cors({
-    origin: ["http://localhost:3000",
-  "https://isamar-app-backend-alexjes98.vercel.app/"],
+    origin: ["http://localhost:3000","https://isamarfrontend.vercel.app/"],
   })
 );
 app.use(bodyParser.urlencoded({ extended: false }));
