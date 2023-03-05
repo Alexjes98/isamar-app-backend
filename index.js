@@ -93,11 +93,12 @@ app.post("/login", async (req, res) => {
     const oldUser = await db.query(dbquery);
 
     if (Array.isArray(oldUser) && oldUser.length === 0) {
-      return res.status(409).send("User Does not  Exist. Please Register");
+      res.status(409).send({error: "User Does not  Exist. Contact support"});
     }
     const user = oldUser[0];
 
-    if (await bcrypt.compare(password, user.password)) {
+    if (await bcrypt.compare(password, user?.password)) {
+      console.log("contraseña")
       const token = jwt.sign(
         { user_id: user.dni, dni },
         process.env.TOKEN_KEY,
@@ -113,12 +114,10 @@ app.post("/login", async (req, res) => {
         clothes: ["admin", "confeccionista"],
         materials: ["admin", "almacenista"],
       }
-
       res.status(200).json({ ...user, ...perm });
     } else {
-      res.status(400).send("Invalid Credentials");
+      res.status(400).send({error: "Invalid Credentials"});
     }
-
   } catch (err) {
     console.log(err);
   }
