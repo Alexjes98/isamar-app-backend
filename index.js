@@ -36,7 +36,7 @@ app.post("/register", async (req, res) => {
     const oldUser = await db.query(dbquery);
 
     if (Array.isArray(oldUser) && oldUser.length > 0) {
-      return res.status(409).send("User Already Exist. Please Login");
+      return res.status(409).send({error: "User Already Exist"});
     }
     encryptedPassword = await bcrypt.hash(password, 10);
 
