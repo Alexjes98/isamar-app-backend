@@ -11,7 +11,7 @@ const auth = require("./auth");
 
 app.use(
   cors({
-    origin: ["http://localhost:3000","https://isamarfrontend.vercel.app"],
+    origin: ["http://localhost:3000", "https://isamarfrontend.vercel.app"],
   })
 );
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -36,7 +36,7 @@ app.post("/register", async (req, res) => {
     const oldUser = await db.query(dbquery);
 
     if (Array.isArray(oldUser) && oldUser.length > 0) {
-      return res.status(409).send({error: "User Already Exist"});
+      return res.status(409).send({ error: "User Already Exist" });
     }
     encryptedPassword = await bcrypt.hash(password, 10);
 
@@ -59,6 +59,17 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.delete("/users/:dni", auth, async (req, res) => {
+  try {
+    const params = req.params;
+    const dbquery = `DELETE FROM users WHERE users.dni = ${params.dni}`;
+    const result = await db.query(dbquery);
+    res.send(result);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 app.put("/users/:dni", auth, async (req, res) => {
   const params = req.params;
   const body = req.body;
@@ -67,11 +78,9 @@ app.put("/users/:dni", auth, async (req, res) => {
                     nombre = '${body.nombre}',
                     apellido = '${body.apellido}',
                     telefono='${body.telefono}',
-                    password='${encryptedPassword}',
                     dni = '${body.dni}',
-                    rol = '${body.rol}',
-                  WHERE
-                    users.dni = ${params.dni}`;
+                    rol = '${body.rol}'
+                  WHERE users.dni = '${params.dni}'`;
   const result = await db.query(dbquery);
   res.send(result);
 });
@@ -93,7 +102,7 @@ app.post("/login", async (req, res) => {
     const oldUser = await db.query(dbquery);
 
     if (Array.isArray(oldUser) && oldUser.length === 0) {
-      res.status(409).send({error: "User Does not  Exist. Contact support"});
+      res.status(409).send({ error: "User Does not  Exist. Contact support" });
     }
     const user = oldUser[0];
 
@@ -116,7 +125,7 @@ app.post("/login", async (req, res) => {
       }
       res.status(200).json({ ...user, ...perm });
     } else {
-      res.status(400).send({error: "Invalid Credentials"});
+      res.status(400).send({ error: "Invalid Credentials" });
     }
   } catch (err) {
     console.log(err);
