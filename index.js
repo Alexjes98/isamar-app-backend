@@ -61,7 +61,7 @@ app.post("/register", async (req, res) => {
 
 app.delete("/users/:dni", auth, async (req, res) => {
   try {
-    const params = req.params;
+    const params = req.params
     const dbquery = `DELETE FROM users WHERE users.dni = ${params.dni}`;
     const result = await db.query(dbquery);
     res.send(result);
